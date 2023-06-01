@@ -1,0 +1,99 @@
+---
+title: "EEG"
+author: "Tilde Sloth"
+date: "2023-05-30"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+pacman::p_load(tidyverse, pastecs, WRS2, moments, car, plyr, dplyr, lme4, caret, lmerTest, caret, jtools, boot)
+```
+
+## Data for Fz channel
+```{r}
+audio_fz <- read_csv("special_audio_data_fz.csv")
+audiovisual_fz <- read_csv("special_visual_and_audio_data_fz.csv")
+
+
+audio_fz <- audio_fz %>% 
+  mutate(condition = "audio")
+
+audio_fz <- audio_fz %>% 
+  dplyr::rename(signal = special_audio_data_fz)
+
+audio_fz <- audio_fz %>% 
+  dplyr::group_by(level_0) %>% 
+  dplyr::mutate(signal_mean = mean(signal), peak_amplitude = min(signal))
+
+audio_fz <- audio_fz %>% distinct(level_0, .keep_all = TRUE)
+
+
+audiovisual_fz <- audiovisual_fz %>% 
+  mutate(condition = "audiovisual")
+
+audiovisual_fz <- audiovisual_fz %>% 
+  dplyr::rename(signal = special_visual_and_audio_data_fz)
+
+audiovisual_fz <- audiovisual_fz %>% 
+  dplyr::group_by(level_0) %>% 
+  dplyr::mutate(signal_mean = mean(signal), peak_amplitude = min(signal))
+
+audiovisual_fz <- audiovisual_fz%>% distinct(level_0, .keep_all = TRUE)
+
+audio_combined <- rbind(audiovisual_fz, audio_fz)
+```
+
+## Data for Oz channel
+```{r}
+visual_oz <- read_csv("special_visual_data_oz.csv")
+audiovisual_oz <- read_csv("special_visual_and_audio_data_oz.csv")
+
+visual_oz <- visual_oz %>% 
+  mutate(condition = "visual")
+
+visual_oz <- visual_oz %>% 
+  dplyr::rename(signal = special_visual_data_oz)
+
+visual_oz <- visual_oz %>% 
+  dplyr::group_by(level_0) %>% 
+  dplyr::mutate(signal_mean = mean(signal), peak_amplitude = min(signal))
+
+visual_oz <- visual_oz%>% distinct(level_0, .keep_all = TRUE)
+
+audiovisual_oz <- audiovisual_oz %>% 
+  mutate(condition = "audiovisual")
+
+audiovisual_oz <- audiovisual_oz %>% 
+  dplyr::rename(signal = special_visual_and_audio_data_oz)
+
+audiovisual_oz <- audiovisual_oz %>% 
+  dplyr::group_by(level_0) %>% 
+  dplyr::mutate(signal_mean = mean(signal),peak_amplitude = min(signal))
+
+audiovisual_oz <- audiovisual_oz%>% distinct(level_0, .keep_all = TRUE)
+
+visual_combined <- rbind(visual_oz, audiovisual_oz)
+
+```
+## T-test lol
+```{r}
+#windowed mean
+t.test(audio_fz$signal_mean, audiovisual_fz$signal_mean, paired = TRUE)
+
+t.test(visual_oz$signal_mean, audiovisual_oz$signal_mean, paired = TRUE)
+
+#peak negative amplitude mean
+t.test(audio_fz$peak_amplitude, audiovisual_fz$peak_amplitude, paired = TRUE)
+
+t.test(visual_oz$peak_amplitude, audiovisual_oz$peak_amplitude, paired = TRUE)
+```
+## Visual investigation 
+```{r}
+ggplot(audio_combined, aes(x = condition, y = peak_amplitude, fill = condition)) + geom_violin()
+ggplot(visual_combined, aes(x = condition, y = peak_amplitude, fill = condition)) + geom_violin()
+```
+
